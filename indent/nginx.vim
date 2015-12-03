@@ -39,5 +39,3 @@ function! GetMyIndent()
 
     return ind
 endfunction
-
-vim:ts=4
