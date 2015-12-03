@@ -1,45 +1,43 @@
-" Language:	nginx
-" Maintainer:	Dylan Smith
-
+"" Language:	nginx
+"" Maintainer:	Dylan Smith
+"
 " Only load this indent file when no other was loaded.
 if exists("b:did_indent")
-    finish
+   finish
 endif
 let b:did_indent = 1
+"
+setlocal indentexpr=GetMyIndent()
+function! GetMyIndent()
+    let cline = getline(v:lnum)
 
-" [-- local settings (must come before aborting the script) --]
-setlocal indentexpr=NginxIndentGet(v:lnum,1)
-setlocal indentkeys=o,O,*<Return>,<>>,<<>,/,{,}
-
-set cpo-=C
-
-" [-- finish, if the function already exists --]
-if exists('*NginxIndentGet') | finish | endif
-
-fun! NginxIndentGet(lnum, use_syntax_check)
-    " Find a non-empty line above the current line.
-    let lnum = prevnonblank(a:lnum - 1)
-
+    " Find a non-blank line above the current line.
+    let lnum = prevnonblank(v:lnum - 1)
     " Hit the start of the file, use zero indent.
     if lnum == 0
-	return 0
+        return 0
     endif
+    let line = getline(lnum)
+    let ind = indent(lnum)
 
-    let prevline=getline(lnum)
-    let line=getline(a:lnum)
-    let ind=indent(lnum)
-    let inddelta=0
-    if match(line, '^\s*</') == 0
-        "if this is a closing tag line, reduce its indentation
-        let inddelta = 0 - &sw
-    elseif match(prevline,'^\s*<\a') == 0
-        "if previous line is a opening tag line, increase its indentation
-        let inddelta = &sw
+    " Indent blocks enclosed by {}, (), or []
+    " Find a real opening brace
+    let bracepos = match(line, '[(){}\[\]]', matchend(line, '^\s*[)}\]]'))
+    while bracepos != -1
+        let brace = strpart(line, bracepos, 1)
+        if brace == '(' || brace == '{' || brace == '['
+            let ind = ind + &sw
+        else
+            let ind = ind - &sw
+        endif
+        let bracepos = match(line, '[(){}\[\]]', bracepos + 1)
+    endwhile
+    let bracepos = matchend(cline, '^\s*[)}\]]')
+    if bracepos != -1
+        let ind = ind - &sw
     endif
-
-    let ind = ind + inddelta
 
     return ind
-endfun
+endfunction
 
-" vim:ts=8
+vim:ts=4
